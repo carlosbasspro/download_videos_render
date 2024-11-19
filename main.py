@@ -34,7 +34,7 @@ def download():
     ydl_opts = {
         "format": f"{format}",
         "outtmpl": "download/%(title)s.%(ext)s",
-       # "cookiefile": "www.youtube.com_cookies.txt",
+        "cookiefile": "www.youtube.com_cookies.txt",
     }
 
     try:
