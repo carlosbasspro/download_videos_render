@@ -42,8 +42,8 @@ def download():
             info_dict = ydl.extract_info(url, download=True)
             video_title = info_dict.get("title", None)
             video_ext = info_dict.get("ext", None)
-            video_path = f"./download/{video_title}.{video_ext}"
-            final_path = f"./download/{video_title}.{ext}"
+            video_path = f"download/{video_title}.{video_ext}"
+            final_path = f"download/{video_title}.{ext}"
             os.rename(video_path, final_path)
 
             return send_file(final_path, as_attachment=True)
