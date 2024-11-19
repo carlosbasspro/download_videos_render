@@ -18,7 +18,7 @@ def download():
 
     Respostas possíveis:
     - Sucesso: Retorna o arquivo baixado como anexo.
-    - Erro: Retorna uma mensagem JSON com a descrição do erro.
+    - Erro: Retorna uma mensagem JSON com a descrição do erro e o diretório atual do servidor.
     '''
 
     data = request.json
@@ -29,6 +29,8 @@ def download():
     if not url or not format or not ext:
         return jsonify({"error": "URL, format, and extension are required!"}), 400
 
+    # Diretório atual do servidor
+    current_directory = os.getcwd()
 
     # Configurações do yt-dlp
     ydl_opts = {
@@ -42,14 +44,20 @@ def download():
             info_dict = ydl.extract_info(url, download=True)
             video_title = info_dict.get("title", None)
             video_ext = info_dict.get("ext", None)
-            video_path = f"{video_title}.{video_ext}"
-            final_path = f"{video_title}.{ext}"
+            video_path = f"download/{video_title}.{video_ext}"
+            final_path = f"download/{video_title}.{ext}"
+
+            # Renomear arquivo
             os.rename(video_path, final_path)
 
             return send_file(final_path, as_attachment=True)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Adiciona o diretório atual do servidor ao erro retornado
+        return jsonify({
+            "error": str(e),
+            "server_directory": current_directory
+        }), 500
 
 
 if __name__ == '__main__':
