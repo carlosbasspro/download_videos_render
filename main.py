@@ -31,8 +31,7 @@ def download():
 
     # Defina o comando do yt-dlp usando subprocess
     command = [
-        'yt-dlp', 
-        '--cookies-from-browser', 'chrome',  # Usando os cookies do Chrome
+        'yt-dlp',
         '--format', f"{format}",
         '--output', "download/%(title)s.%(ext)s",  # Defina o caminho de saída para o arquivo
         url
