@@ -1,7 +1,6 @@
-from flask import Flask, request, jsonify, send_file
-from yt_dlp import YoutubeDL
+import subprocess
 import os
-import browser_cookie3
+from flask import Flask, request, jsonify, send_file
 
 app = Flask(__name__)
 
@@ -30,30 +29,32 @@ def download():
     if not url or not format or not ext:
         return jsonify({"error": "URL, format, and extension are required!"}), 400
 
-    # Usando browser-cookie3 para carregar os cookies do Chrome
-    cookies = browser_cookie3.chrome()
-
-    # Configurações do yt-dlp para usar os cookies do Chrome
-    ydl_opts = {
-        "format": f"{format}",
-        "outtmpl": "download/%(title)s.%(ext)s",
-        "cookies": cookies,  # Passando os cookies diretamente
-    }
+    # Defina o comando do yt-dlp usando subprocess
+    command = [
+        'yt-dlp', 
+        '--cookies-from-browser', 'chrome',  # Usando os cookies do Chrome
+        '--format', f"{format}",
+        '--output', "download/%(title)s.%(ext)s",  # Defina o caminho de saída para o arquivo
+        url
+    ]
 
     try:
-        with YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=True)
-            video_title = info_dict.get("title", None)
-            video_ext = info_dict.get("ext", None)
-            video_path = f"./download/{video_title}.{video_ext}"
-            final_path = f"/storage/emulated/0/Download/BaixarTube Downloads/{video_title}.{ext}"
-            os.rename(video_path, final_path)
+        # Executando o comando com subprocess
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
 
-            return send_file(final_path, as_attachment=True)
+        # A saída de sucesso vai indicar onde o arquivo foi salvo
+        video_title = result.stdout.strip()  # Supondo que o título seja retornado na saída
+        video_path = f"./download/{video_title}.{ext}"
+        final_path = f"/storage/emulated/0/Download/BaixarTube Downloads/{video_title}.{ext}"
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Renomeia o arquivo para o local final
+        os.rename(video_path, final_path)
 
+        return send_file(final_path, as_attachment=True)
+
+    except subprocess.CalledProcessError as e:
+        # Se ocorrer um erro ao executar o comando yt-dlp
+        return jsonify({"error": f"Failed to download video: {e.stderr}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
