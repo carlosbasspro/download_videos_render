@@ -29,14 +29,18 @@ def download():
     if not url or not format or not ext:
         return jsonify({"error": "URL, format, and extension are required!"}), 400
 
+    # Define o caminho final diretamente
+    download_dir = "/storage/emulated/0/Download/BaixarTube Downloads"
+    os.makedirs(download_dir, exist_ok=True)  # Garante que o diretório exista
+    output_template = f"{download_dir}/%(title)s.%(ext)s"
+
     # Defina o comando do yt-dlp usando subprocess
     command = [
         'yt-dlp',
         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        #'--cookies-from-browser', 'chrome',  # Usando os cookies do Chrome
         '--cookies', 'www.youtube.com_cookies.txt',
         '--format', f"{format}",
-        '--output', "download/%(title)s.%(ext)s",  # Defina o caminho de saída para o arquivo
+        '--output', output_template,  # Define o caminho final diretamente
         url
     ]
 
@@ -44,15 +48,18 @@ def download():
         # Executando o comando com subprocess
         result = subprocess.run(command, capture_output=True, text=True, check=True)
 
-        # A saída de sucesso vai indicar onde o arquivo foi salvo
-        video_title = result.stdout.strip()  # Supondo que o título seja retornado na saída
-        video_path = f"download/{video_title}.{ext}"
-        final_path = f"/storage/emulated/0/Download/BaixarTube Downloads/{video_title}.{ext}"
+        # Parseando o título do vídeo a partir da saída do yt-dlp
+        lines = result.stdout.strip().split("\n")
+        video_file = None
+        for line in lines:
+            if "Destination:" in line:
+                video_file = line.split("Destination:")[1].strip()
+                break
 
-        # Renomeia o arquivo para o local final
-        os.rename(video_path, final_path)
+        if not video_file or not os.path.exists(video_file):
+            return jsonify({"error": "Failed to find downloaded file!"}), 500
 
-        return send_file(final_path, as_attachment=True)
+        return send_file(video_file, as_attachment=True)
 
     except subprocess.CalledProcessError as e:
         # Se ocorrer um erro ao executar o comando yt-dlp
