@@ -33,7 +33,8 @@ def download():
     command = [
         'yt-dlp',
         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        '--cookies-from-browser', 'chrome',  # Usando os cookies do Chrome
+        #'--cookies-from-browser', 'chrome',  # Usando os cookies do Chrome
+        '--cookies', 'www.youtube.com_cookies.txt',
         '--format', f"{format}",
         '--output', "download/%(title)s.%(ext)s",  # Defina o caminho de saída para o arquivo
         url
