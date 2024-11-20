@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from yt_dlp import YoutubeDL
 import os
+import browser_cookie3
 
 app = Flask(__name__)
 
@@ -29,16 +30,14 @@ def download():
     if not url or not format or not ext:
         return jsonify({"error": "URL, format, and extension are required!"}), 400
 
+    # Usando browser-cookie3 para carregar os cookies do Chrome
+    cookies = browser_cookie3.chrome()
 
-    # Configurações do yt-dlp
+    # Configurações do yt-dlp para usar os cookies do Chrome
     ydl_opts = {
         "format": f"{format}",
         "outtmpl": "download/%(title)s.%(ext)s",
-        "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    },
-        "cookiesfrombrowser": "chrome"
-       # "cookiefile": "www.youtube.com_cookies.txt",
+        "cookies": cookies,  # Passando os cookies diretamente
     }
 
     try:
