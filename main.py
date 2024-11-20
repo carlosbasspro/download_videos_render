@@ -46,7 +46,7 @@ def download():
 
         # A saída de sucesso vai indicar onde o arquivo foi salvo
         video_title = result.stdout.strip()  # Supondo que o título seja retornado na saída
-        video_path = f"./download/{video_title}.{ext}"
+        video_path = f"download/{video_title}.{ext}"
         final_path = f"/storage/emulated/0/Download/BaixarTube Downloads/{video_title}.{ext}"
 
         # Renomeia o arquivo para o local final
