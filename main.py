@@ -1,5 +1,6 @@
 import subprocess
 import os
+import tempfile  # Para diretórios temporários
 from flask import Flask, request, jsonify, send_file
 
 app = Flask(__name__)
@@ -7,7 +8,7 @@ app = Flask(__name__)
 @app.route('/download', methods=['POST'])
 def download():
     '''
-    Essa função lida com requisições POST para baixar conteúdos do YouTube. 
+    Essa função lida com requisições POST para baixar conteúdos do YouTube.
     O cliente deve enviar um JSON com o seguinte formato:
 
     {
@@ -29,37 +30,30 @@ def download():
     if not url or not format or not ext:
         return jsonify({"error": "URL, format, and extension are required!"}), 400
 
-    # Define o caminho final diretamente
-    download_dir = "/storage/emulated/0/Download/BaixarTube Downloads"
-    os.makedirs(download_dir, exist_ok=True)  # Garante que o diretório exista
-    output_template = f"{download_dir}/%(title)s.%(ext)s"
-
-    # Defina o comando do yt-dlp usando subprocess
-    command = [
-        'yt-dlp',
-        '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        '--cookies', 'www.youtube.com_cookies.txt',
-        '--format', f"{format}",
-        '--output', output_template,  # Define o caminho final diretamente
-        url
-    ]
-
     try:
-        # Executando o comando com subprocess
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        # Usa um diretório temporário para salvar o arquivo
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file = os.path.join(temp_dir, f"downloaded_video.{ext}")
 
-        # Parseando o título do vídeo a partir da saída do yt-dlp
-        lines = result.stdout.strip().split("\n")
-        video_file = None
-        for line in lines:
-            if "Destination:" in line:
-                video_file = line.split("Destination:")[1].strip()
-                break
+            # Defina o comando do yt-dlp usando subprocess
+            command = [
+                'yt-dlp',
+                '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                '--cookies', 'www.youtube.com_cookies.txt',
+                '--format', f"{format}",
+                '--output', output_file,  # Define o arquivo final diretamente
+                url
+            ]
 
-        if not video_file or not os.path.exists(video_file):
-            return jsonify({"error": "Failed to find downloaded file!"}), 500
+            # Executando o comando com subprocess
+            subprocess.run(command, capture_output=True, text=True, check=True)
 
-        return send_file(video_file, as_attachment=True)
+            # Verifica se o arquivo foi baixado
+            if not os.path.exists(output_file):
+                return jsonify({"error": "Failed to find downloaded file!"}), 500
+
+            # Retorna o arquivo baixado como anexo
+            return send_file(output_file, as_attachment=True)
 
     except subprocess.CalledProcessError as e:
         # Se ocorrer um erro ao executar o comando yt-dlp
