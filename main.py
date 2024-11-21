@@ -18,7 +18,7 @@ def download():
     try:
         current_directory = os.getcwd()
         unique_id = str(uuid.uuid4())  # Gera um ID único para o arquivo
-        output_file = f"{current_directory}/{unique_id}.{ext}"
+        output_file = os.path.join(current_directory, f"{unique_id}.{ext}")
 
         command = [
             'yt-dlp',
@@ -29,22 +29,27 @@ def download():
             url
         ]
 
-        # Executando o comando com subprocess
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
-        
+        # Executa o comando yt-dlp
+        subprocess.run(command, capture_output=True, text=True, check=True)
+
         # Verifica se o arquivo foi baixado
         if not os.path.exists(output_file):
-            return jsonify({"error": "Failed to find downloaded file!", "stderr": result.stderr}), 500
+            # Lista os arquivos no diretório atual
+            files = os.listdir(current_directory)
+            return jsonify({
+                "error": "Failed to find downloaded file!",
+                "files": files  # Retorna a lista de arquivos
+            }), 500
 
         # Retorna o arquivo baixado como anexo
         return send_file(output_file, as_attachment=True)
 
     except subprocess.CalledProcessError as e:
-        # Captura a saída de erro e a saída padrão
+        # Lista os arquivos no diretório em caso de erro do yt-dlp
+        files = os.listdir(current_directory)
         return jsonify({
-            "error": "Failed to download video",
-            "stderr": e.stderr,
-            "stdout": e.stdout
+            "error": "Failed to download video!",
+            "files": files
         }), 500
 
 if __name__ == '__main__':
